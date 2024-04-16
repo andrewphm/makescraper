@@ -6,23 +6,30 @@ import (
 	"github.com/gocolly/colly"
 )
 
+type CryptoCurrency struct {
+	Name  string
+	Price string
+}
+
 // main() contains code adapted from example found in Colly's docs:
 // http://go-colly.org/docs/examples/basic/
 func main() {
 	// Instantiate default collector
 	c := colly.NewCollector()
 
-	// Define Bitcoin and Ethereum selectors
-	bitcoinSelector := "table > tbody > tr:nth-child(1) > td:nth-child(4) > div > a > span"
-	ethereumSelector := "table > tbody > tr:nth-child(2) > td:nth-child(4) > div > a > span"
+	var cryptocurrencies []CryptoCurrency
+
+	selectors := map[string]string{
+		"Bitcoin":  "table > tbody > tr:nth-child(1) > td:nth-child(4) > div > a > span",
+		"Ethereum": "table > tbody > tr:nth-child(2) > td:nth-child(4) > div > a > span",
+	}
 
 	// On visiting the main page, look for the table and the necessary rows using the defined selectors
 	c.OnHTML("body", func(e *colly.HTMLElement) {
-		bitcoinPrice := e.ChildText(bitcoinSelector)
-		ethereumPrice := e.ChildText(ethereumSelector)
-
-		fmt.Printf("Bitcoin Price: %s\n", bitcoinPrice)
-		fmt.Printf("Ethereum Price: %s\n", ethereumPrice)
+		for name, selector := range selectors {
+			price := e.ChildText(selector)
+			cryptocurrencies = append(cryptocurrencies, CryptoCurrency{Name: name, Price: price})
+		}
 	})
 
 	// Log errors if there are any
@@ -37,4 +44,9 @@ func main() {
 
 	// Start scraping on https://hackerspaces.org
 	c.Visit("https://coinmarketcap.com/")
+
+	// Print out
+	for _, crypto := range cryptocurrencies {
+		fmt.Printf("%s Price: %s\n", crypto.Name, crypto.Price)
+	}
 }
